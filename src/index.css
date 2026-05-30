@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-neutral-950 text-neutral-200 overflow-x-hidden font-sans selection:bg-cyan-500/30 selection:text-cyan-200;
+  }
+
+  /* Thin terminal scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-neutral-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-700 hover:bg-neutral-600 rounded-sm;
+  }
+}
+
+@layer components {
+  .terminal-card {
+    @apply bg-neutral-900/60 border border-neutral-800/80 rounded-xl backdrop-blur-md shadow-2xl;
+  }
+  
+  .neon-border-glow {
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+  }
+
+  .neon-border-green {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+  }
+
+  .neon-border-red {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
+  }
+}
+
+/* Custom animation for scanning scanner overlay */
+@keyframes scan-line {
+  0% {
+    top: 0%;
+  }
+  50% {
+    top: 100%;
+  }
+  100% {
+    top: 0%;
+  }
+}
+
+.terminal-scanline {
+  animation: scan-line 4s linear infinite;
+}
+
+/* Pulsing highlight for CodeMirror lines when clicked from issue panel */
+@keyframes cm-line-flash {
+  0%, 100% {
+    background-color: rgba(6, 182, 212, 0.1);
+    box-shadow: inset 4px 0 0 #06b6d4;
+  }
+  50% {
+    background-color: rgba(6, 182, 212, 0.35);
+    box-shadow: inset 4px 0 0 #22d3ee;
+  }
+}
+
+.highlighted-editor-line {
+  animation: cm-line-flash 1.2s ease-in-out 3;
+}
