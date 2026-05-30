@@ -4,10 +4,15 @@ import { calculateScore } from './scoring';
 import { refactorEngine } from './refactor/refactorEngine';
 import * as acorn from 'acorn';
 
-export function analyzeCode(code: string): AnalysisResult {
+export function analyzeCode(code: string, enabledRuleIds?: string[]): AnalysisResult {
   const lines = code.split('\n');
   const analyzedAt = Date.now();
   const codeSnapshot = code.substring(0, 200) + (code.length > 200 ? '...' : '');
+
+  // Filter rules according to enabled list if provided
+  const activeRules = enabledRuleIds
+    ? rules.filter(r => enabledRuleIds.includes(r.id))
+    : rules;
 
   let allIssues: Issue[] = [];
   let thinkingTrace: ThinkingStep[] = [];
@@ -25,7 +30,6 @@ export function analyzeCode(code: string): AnalysisResult {
     });
   } catch (err: any) {
     isSyntaxValid = false;
-    // Extract line/column from acorn error (typically format: "Message (line:col)")
     const match = err.message.match(/\((\d+):(\d+)\)/);
     const line = match ? parseInt(match[1], 10) : 1;
     const col = match ? parseInt(match[2], 10) : 0;
@@ -38,8 +42,6 @@ export function analyzeCode(code: string): AnalysisResult {
   }
 
   if (!isSyntaxValid && syntaxErrorDetails) {
-    // Return immediately or populate a special critical issue list
-    // An unparseable file is a critical failure. Let's record it!
     const syntaxIssue: Issue = {
       id: `syntax-fatal-${Date.now()}`,
       ruleId: 'syntax',
@@ -59,7 +61,7 @@ export function analyzeCode(code: string): AnalysisResult {
     });
 
     // Provide default thinking steps for other rules to maintain a full trace list
-    rules.forEach(rule => {
+    activeRules.forEach(rule => {
       thinkingTrace.push({
         phase: rule.name,
         observation: 'Rule execution bypassed due to prior compilation failure.',
@@ -75,15 +77,15 @@ export function analyzeCode(code: string): AnalysisResult {
       issues: allIssues,
       suggestions: ['Resolve the fatal syntax/compiler error highlighted in the editor.'],
       thinkingTrace,
-      refactoredCode: code, // No refactor if syntax is broken
+      refactoredCode: code, 
       analyzedAt,
       codeSnapshot
     };
   }
 
   // 2. Normal execution pipeline
-  // Run all rules in sequence to collect issues
-  allIssues = rules.flatMap(rule => {
+  // Run all active rules in sequence to collect issues
+  allIssues = activeRules.flatMap(rule => {
     try {
       return rule.analyze(code, lines);
     } catch (e) {
@@ -92,8 +94,8 @@ export function analyzeCode(code: string): AnalysisResult {
     }
   });
 
-  // Collect step-by-step thinking trace per rule
-  thinkingTrace = rules.map(rule => {
+  // Collect step-by-step thinking trace per active rule
+  thinkingTrace = activeRules.map(rule => {
     try {
       return rule.getThinkingStep(code);
     } catch (e) {

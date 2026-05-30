@@ -10,11 +10,13 @@ interface AnalysisState {
   result: AnalysisResult | null;
   history: HistoryEntry[];
   highlightedLine: number | null;
-  activeTab: 'summary' | 'issues' | 'refactor';
+  activeTab: 'summary' | 'suggestions' | 'issues' | 'refactor';
   
+  ruleToggles: { [key: string]: boolean };
+  toggleRule: (ruleId: string) => void;
   setCode: (code: string) => void;
   setHighlightedLine: (line: number | null) => void;
-  setActiveTab: (tab: 'summary' | 'issues' | 'refactor') => void;
+  setActiveTab: (tab: 'summary' | 'suggestions' | 'issues' | 'refactor') => void;
   loadHistory: () => void;
   deleteHistoryItem: (id: string) => void;
   selectHistoryEntry: (entry: HistoryEntry) => void;
@@ -32,11 +34,28 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   highlightedLine: null,
   activeTab: 'summary',
 
+  ruleToggles: {
+    complexity: true,
+    naming: true,
+    async: true,
+    errorHandling: true,
+    performance: true,
+    security: true,
+    bestPractice: true,
+    nodeSpecific: true,
+    scope: true
+  },
+
+  toggleRule: (ruleId: string) => {
+    const updated = { ...get().ruleToggles, [ruleId]: !get().ruleToggles[ruleId] };
+    set({ ruleToggles: updated });
+  },
+
   setCode: (code: string) => set({ code }),
   
   setHighlightedLine: (line: number | null) => set({ highlightedLine: line }),
   
-  setActiveTab: (tab: 'summary' | 'issues' | 'refactor') => set({ activeTab: tab }),
+  setActiveTab: (tab: 'summary' | 'suggestions' | 'issues' | 'refactor') => set({ activeTab: tab }),
 
   loadHistory: () => {
     try {
@@ -79,6 +98,9 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
         activeTab: 'summary'
       });
       
+      // Automatically re-run static analysis to calculate the improved score!
+      get().triggerAnalysis();
+      
       // @ts-ignore
       import('canvas-confetti').then((confetti) => {
         confetti.default({
@@ -92,11 +114,14 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   },
 
   triggerAnalysis: () => {
-    const { code } = get();
+    const { code, ruleToggles } = get();
     if (!code.trim()) return;
 
+    // Collate all active toggled rules
+    const enabledRuleIds = Object.keys(ruleToggles).filter(id => ruleToggles[id]);
+
     // Run our pure analytical pipeline immediately to get steps
-    const computedResult = analyzeCode(code);
+    const computedResult = analyzeCode(code, enabledRuleIds);
     const totalSteps = computedResult.thinkingTrace.length;
 
     // Reset UI state for a new analysis

@@ -7,6 +7,7 @@ import { performanceRule } from './performance.rule';
 import { securityRule } from './security.rule';
 import { bestPracticeRule } from './bestPractice.rule';
 import { nodeSpecificRule } from './nodeSpecific.rule';
+import { scopeRule } from './scope.rule';
 
 export const rules: Rule[] = [
   complexityRule,
@@ -16,5 +17,6 @@ export const rules: Rule[] = [
   performanceRule,
   securityRule,
   bestPracticeRule,
-  nodeSpecificRule
+  nodeSpecificRule,
+  scopeRule
 ];

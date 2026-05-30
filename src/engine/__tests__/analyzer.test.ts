@@ -119,6 +119,59 @@ describe('Smart Code Analyzer - Rules & Engine Tests', () => {
       expect(issues.some(i => i.message.includes('Synchronous Blocking Call'))).toBe(true);
       expect(issues.some(i => i.message.includes('Nested Loop Detected'))).toBe(true);
     });
+
+    it('should audit variable shadowing and unused variables (Lexical Scope)', () => {
+      const code = `
+        const outerVar = 'outer';
+        let unusedField = 100;
+        function scopeCheck() {
+          const outerVar = 'inner-shadow'; // shadowing warning
+          return outerVar;
+        }
+      `;
+      const result = analyzeCode(code);
+      const issues = result.issues;
+
+      expect(issues.some(i => i.message.includes('Variable Shadowing Detected'))).toBe(true);
+      expect(issues.some(i => i.message.includes('Unused Variable'))).toBe(true);
+    });
+
+    it('should audit undefined function calls (Lexical Scope)', () => {
+      const code = `
+        function main() {
+          declaredHelper(); // defined
+          undefinedAction(); // undefined call
+        }
+        function declaredHelper() {
+          return 100;
+        }
+      `;
+      const result = analyzeCode(code);
+      const issues = result.issues;
+
+      expect(issues.some(i => i.message.includes("Undefined Function Invocation ('undefinedAction')"))).toBe(true);
+      expect(issues.some(i => i.message.includes("declaredHelper"))).toBe(false);
+    });
+
+    it('should audit generalized undefined variable references and destructured parameters', () => {
+      const code = `
+        const { active, details: { user } } = getSession(); 
+        const myVal = undefinedVariable; 
+        setTimeout(undefCallback, 1000); 
+        
+        function getSession() {
+          return { active: true, details: { user: 'guest' } };
+        }
+      `;
+      const result = analyzeCode(code);
+      const issues = result.issues;
+
+      expect(issues.some(i => i.message.includes("Undefined Variable Reference ('undefinedVariable')"))).toBe(true);
+      expect(issues.some(i => i.message.includes("Undefined Variable Reference ('undefCallback')"))).toBe(true);
+      expect(issues.some(i => i.severity === 'critical' && i.message.includes("active"))).toBe(false);
+      expect(issues.some(i => i.severity === 'critical' && i.message.includes("user"))).toBe(false);
+      expect(issues.some(i => i.severity === 'critical' && i.message.includes("getSession"))).toBe(false);
+    });
   });
 
   describe('2. Scoring Logic Deductions & Capping', () => {

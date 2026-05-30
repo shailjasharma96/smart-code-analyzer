@@ -1,13 +1,14 @@
-import React from 'react';
-import { Terminal, History, ShieldCheck, HardDrive } from 'lucide-react';
+import { Terminal, History, ShieldCheck, HardDrive, Settings } from 'lucide-react';
 import { useAnalysisStore } from '../../store/useAnalysisStore';
 
 interface HeaderProps {
   onOpenHistory: () => void;
+  onOpenSettings: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenHistory }) => {
-  const { history } = useAnalysisStore();
+export const Header: React.FC<HeaderProps> = ({ onOpenHistory, onOpenSettings }) => {
+  const { history, ruleToggles } = useAnalysisStore();
+  const activeRulesCount = Object.values(ruleToggles).filter(Boolean).length;
 
   return (
     <header className="bg-neutral-950/80 border-b border-neutral-900 px-6 py-4 flex items-center justify-between backdrop-blur-md sticky top-0 z-30">
@@ -29,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenHistory }) => {
             </span>
             <span className="flex items-center gap-0.5">
               <HardDrive size={10} className="text-emerald-500/70" />
-              <span>8 Pluggable Rules</span>
+              <span>{activeRulesCount} Rules Active</span>
             </span>
           </div>
         </div>
@@ -37,6 +38,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenHistory }) => {
 
       {/* Control Actions */}
       <div className="flex items-center gap-3">
+        {/* Rules Config Button */}
+        <button
+          onClick={onOpenSettings}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-cyan-500/30 text-xs font-mono text-neutral-300 rounded-md transition-all shadow-[0_0_10px_rgba(0,0,0,0.2)] group"
+        >
+          <Settings size={13} className="text-cyan-500 group-hover:rotate-[20deg] transition-all" />
+          <span>Rules</span>
+        </button>
+
+        {/* History Button */}
         <button
           onClick={onOpenHistory}
           className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 hover:border-cyan-500/30 text-xs font-mono text-neutral-300 rounded-md transition-all shadow-[0_0_10px_rgba(0,0,0,0.2)] group"
